@@ -16,7 +16,7 @@ class Computer < Player
   def set_word
     until long_word?
       random_line = (0..61_406).to_a.sample
-      File.open(DICTIONARY_FILE) do |file|
+      File.open(DICTIONARY_FILE, chomp: true) do |file|
         random_line.times { file.readline }
         self.word = file.readline
       end
@@ -41,7 +41,7 @@ class Human < Player
     guess = ''
     loop do
       puts 'Please enter a letter'
-      guess = gets.chomp.downcase
+      guess = gets.chomp.downcase.strip
       break if valid_input?(guess)
       puts 'Invalid input'
     end
@@ -73,6 +73,18 @@ class Game
     @computer = computer
   end
 
+  def display_word_in_progress
+    wip = '_' * (computer.word.length - 1) # readline has a newline character i cant figure out how to get rid of right now.
+    human.correct_guesses.each do |letter|
+      indicies = []
+      computer.word.chars.each_with_index do |char, idx|
+        indicies << idx if char.downcase == letter
+      end
+      indicies.each { |idx| wip[idx] = letter }
+    end
+    puts wip
+  end
+
   def correct_guess?
     computer.word.include?(human.current_guess)
   end
@@ -89,6 +101,7 @@ class Game
     computer.set_word
     loop do
       puts computer.word
+      display_word_in_progress
       play_round
       p human.correct_guesses
       p human.wrong_guesses
