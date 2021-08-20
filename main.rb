@@ -18,7 +18,7 @@ class Computer < Player
       random_line = (0..61_406).to_a.sample
       File.open(DICTIONARY_FILE, chomp: true) do |file|
         random_line.times { file.readline }
-        self.word = file.readline
+        self.word = file.readline.strip
       end
     end
   end
@@ -53,6 +53,7 @@ class Human < Player
   end
 
   def valid_input?(input)
+    return false if input.length > 1
     return false if previous_guess?(input)
     return false unless input.match?(/[a-z]/)
 
@@ -74,7 +75,7 @@ class Game
   end
 
   def display_word_in_progress
-    wip = '_' * (computer.word.length - 1) # readline has a newline character i cant figure out how to get rid of right now.
+    wip = '_' * (computer.word.length) # readline has a newline character i cant figure out how to get rid of right now.
     human.correct_guesses.each do |letter|
       indicies = []
       computer.word.chars.each_with_index do |char, idx|
@@ -97,16 +98,25 @@ class Game
     end
   end
 
+  def win?
+    computer.word.chars.uniq.sort == human.correct_guesses.sort
+  end
+
   def play_game
     computer.set_word
     loop do
-      puts computer.word
       display_word_in_progress
       play_round
       p human.correct_guesses
       p human.wrong_guesses
       puts human.chances_left
-      break if human.chances_left.zero?
+      break if human.chances_left.zero? || win?
+    end
+    if win?
+      puts 'You won!'
+    else
+      puts "You've run out of guesses, you lose."
+      puts "The word was #{computer.word}"
     end
   end
 
