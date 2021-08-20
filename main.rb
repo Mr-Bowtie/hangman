@@ -29,22 +29,38 @@ class Computer < Player
 end
 
 class Human < Player
-  attr_accessor :guesses, :chances_left, :current_guess
+  attr_accessor :correct_guesses, :wrong_guesses, :current_guess
 
   def initialize(*args)
-    @guesses = []
-    @chances_left = 10
+    @correct_guesses = []
+    @wrong_guesses = []
     @current_guess = ''
   end
 
   def get_guess
-    puts 'Please enter a letter'
-    self.current_guess = gets.chomp
-    guesses << current_guess
+    guess = ''
+    loop do
+      puts 'Please enter a letter'
+      guess = gets.chomp.downcase
+      break if valid_input?(guess)
+      puts 'Invalid input'
+    end
+    self.current_guess = guess
   end
 
-  def bad_guess
-    self.chances_left -= 1
+  def previous_guess?(input)
+    correct_guesses.include?(input) || wrong_guesses.include?(input)
+  end
+
+  def valid_input?(input)
+    return false if previous_guess?(input)
+    return false unless input.match?(/[a-z]/)
+
+    true
+  end
+
+  def chances_left
+    10 - wrong_guesses.size
   end
 end
 
@@ -61,20 +77,29 @@ class Game
     computer.word.include?(human.current_guess)
   end
 
+  def sort_guess
+    if correct_guess?
+      human.correct_guesses << human.current_guess
+    else
+      human.wrong_guesses << human.current_guess
+    end
+  end
+
   def play_game
     computer.set_word
     loop do
       puts computer.word
       play_round
-      p human.guesses
+      p human.correct_guesses
+      p human.wrong_guesses
       puts human.chances_left
-      break if human.chances_left == 0
+      break if human.chances_left.zero?
     end
   end
 
   def play_round
     human.get_guess
-    human.bad_guess unless correct_guess?
+    sort_guess
   end
 end
 
