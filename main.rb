@@ -1,4 +1,5 @@
 require 'pry'
+require 'yaml'
 
 DICTIONARY_FILE = 'dictionary.txt'.freeze
 
@@ -37,10 +38,10 @@ class Human < Player
     @current_guess = ''
   end
 
-  def get_guess
+  def get_input
     guess = ''
     loop do
-      puts 'Please enter a letter'
+      puts "Please enter a letter (enter 'save' to save the game)"
       guess = gets.chomp.downcase.strip
       break if valid_input?(guess)
       puts 'Invalid input'
@@ -53,6 +54,7 @@ class Human < Player
   end
 
   def valid_input?(input)
+    return true if input == 'save'
     return false if input.length > 1
     return false if previous_guess?(input)
     return false unless input.match?(/[a-z]/)
@@ -74,6 +76,33 @@ class Game
     @computer = computer
   end
 
+  def self.show_saves
+    Dir.each_child('saves') { |save| puts save.gsub('.yml', '') }
+  end
+
+  def self.save_game(game)
+    puts '===== Save Files ====='
+    self.show_saves
+    puts 'Input save name (enter name of old save to overwrite)'
+    save_name = gets.chomp
+    File.open("saves/#{save_name}.yml", 'w') do |file|
+      file.write(YAML.dump(game))
+    end
+    puts 'Game saved'
+  end
+
+  def self.load_game
+    self.show_saves
+    puts 'Choose a saved game to load'
+    save = gets.chomp + '.yml'
+    #Todo: need input validation here
+    game = nil
+    File.open("saves/#{save}", 'r') do |file|
+      game = YAML.load(file)
+    end
+    game
+  end
+
   def display_word_in_progress
     wip = '_' * (computer.word.length) # readline has a newline character i cant figure out how to get rid of right now.
     human.correct_guesses.each do |letter|
@@ -93,6 +122,8 @@ class Game
   def sort_guess
     if correct_guess?
       human.correct_guesses << human.current_guess
+    elsif human.current_guess == 'save'
+      self.class.save_game(self)
     else
       human.wrong_guesses << human.current_guess
     end
@@ -121,13 +152,13 @@ class Game
   end
 
   def play_round
-    human.get_guess
+    human.get_input
     sort_guess
   end
 end
 
 human = Human.new
 computer = Computer.new
-hangman = Game.new(human, computer)
+hangman = Game.load_game
 
 hangman.play_game

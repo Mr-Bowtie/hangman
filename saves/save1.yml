@@ -1,0 +1,13 @@
+--- !ruby/object:Game
+human: !ruby/object:Human
+  correct_guesses:
+  - o
+  - s
+  wrong_guesses:
+  - a
+  - e
+  - u
+  - i
+  current_guess: save
+computer: !ruby/object:Computer
+  word: sonny

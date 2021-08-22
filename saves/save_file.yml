@@ -1,0 +1,11 @@
+--- !ruby/object:Game
+human: !ruby/object:Human
+  correct_guesses:
+  - e
+  - a
+  - i
+  wrong_guesses:
+  - s
+  current_guess: s
+computer: !ruby/object:Computer
+  word: medicable
