@@ -5,7 +5,15 @@ require 'yaml'
 
 DICTIONARY_FILE = 'dictionary.txt'
 
+module Display
+  def prompt(input)
+    puts "==: #{input}"
+  end
+end
+
 class Player
+  include Display
+
   def initialize; end
 end
 
@@ -43,12 +51,12 @@ class Human < Player
   def get_guess
     guess = ''
     loop do
-      puts 'Please enter a letter'
-      puts "(enter 'save' or 'quit' at anytime)"
+      prompt 'Please enter a letter'
+      prompt "(enter 'save' or 'quit' at anytime)"
       guess = gets.chomp.downcase.strip
       break if valid_guess?(guess)
 
-      puts 'Invalid input'
+      prompt 'Invalid input'
     end
     self.current_guess = guess
   end
@@ -74,6 +82,8 @@ end
 
 # Contains all game logic and methods for game functions
 class Game
+  extend Display
+  include Display
   attr_accessor :human, :computer
 
   def initialize(human, computer)
@@ -82,14 +92,15 @@ class Game
   end
 
   def self.start_game(human, computer)
-    puts 'Welcome to Hangman!'
-    puts 'Would you like to load a save or start an new game? (enter load or new)'
+    system('clear')
+    prompt 'Welcome to Hangman!'
+    prompt 'Would you like to load a save or start an new game? (enter load or new)'
     choice = ''
     loop do
       choice = gets.chomp.downcase.strip
       break if valid_start_input?(choice)
 
-      puts 'Invalid input: please enter load or new'
+      prompt 'Invalid input: please enter load or new'
     end
     choice == 'load' ? load_game : new(human, computer)
   end
@@ -106,12 +117,12 @@ class Game
   def self.save_game(game)
     system('clear')
     show_saves
-    puts 'Input save name (enter name of old save to overwrite)'
+    prompt 'Input save name (enter name of old save to overwrite)'
     save_name = gets.chomp
     File.open("saves/#{save_name}.yml", 'w') do |file|
       file.write(YAML.dump(game))
     end
-    puts 'Game saved'
+    prompt 'Game saved'
     sleep 1.5
     system('clear')
   end
@@ -119,12 +130,12 @@ class Game
   def self.load_game
     system('clear')
     show_saves
-    puts 'Choose a saved game to load'
+    prompt 'Choose a saved game to load'
     save = ''
     loop do
       save = gets.chomp + '.yml'
       break if File.exist?("saves/#{save}")
-      puts 'File does not exist.'
+      prompt 'File does not exist.'
     end
     game = nil
     File.open("saves/#{save}", 'r') do |file|
@@ -142,7 +153,7 @@ class Game
       end
       indicies.each { |idx| wip[idx] = letter }
     end
-    puts wip
+    prompt wip
   end
 
   def correct_guess?
@@ -155,7 +166,7 @@ class Game
     elsif human.current_guess == 'save'
       Game.save_game(self)
     elsif human.current_guess == 'quit'
-      puts 'Thanks for playing!'
+      prompt 'Thanks for playing!'
       exit
     else
       human.wrong_guesses << human.current_guess
@@ -170,19 +181,37 @@ class Game
     computer.set_word
     loop do
       system('clear')
-      display_word_in_progress
-      p human.correct_guesses
-      p human.wrong_guesses
-      puts human.chances_left
+      display_round_header
       play_round
       break if human.chances_left.zero? || win?
     end
     if win?
-      puts 'You won!'
+      prompt 'You won!'
     else
-      puts "You've run out of guesses, you lose."
+      prompt "You've run out of guesses, you lose."
     end
-    puts "The word was #{computer.word}"
+    prompt "The word was #{computer.word}"
+  end
+
+  def display_round_header
+    display_word_in_progress
+    display_correct_guesses
+    display_wrong_guesses
+    display_chances_left
+  end
+
+  def display_correct_guesses
+    print 'Correct guesses: '
+    puts human.correct_guesses.join(', ')
+  end
+
+  def display_wrong_guesses
+    print 'Incorrect guesses: '
+    puts human.wrong_guesses.join(', ')
+  end
+
+  def display_chances_left
+    prompt "Guesses remaining: #{human.chances_left}"
   end
 
   def play_round
