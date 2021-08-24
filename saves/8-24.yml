@@ -1,9 +1,0 @@
---- !ruby/object:Game
-human: !ruby/object:Human
-  correct_guesses:
-  - h
-  - e
-  wrong_guesses: []
-  current_guess: save
-computer: !ruby/object:Computer
-  word: chafe

@@ -43,7 +43,8 @@ class Human < Player
   def get_guess
     guess = ''
     loop do
-      puts "Please enter a letter (enter 'save' to save the game)"
+      puts 'Please enter a letter'
+      puts "(enter 'save' or 'quit' at anytime)"
       guess = gets.chomp.downcase.strip
       break if valid_guess?(guess)
 
@@ -58,6 +59,7 @@ class Human < Player
 
   def valid_guess?(input)
     return true if input == 'save'
+    return true if input == 'quit'
     return false if input.length > 1
     return false if previous_guess?(input)
     return false unless input.match?(/[a-z]/)
@@ -84,7 +86,7 @@ class Game
     puts 'Would you like to load a save or start an new game? (enter load or new)'
     choice = ''
     loop do
-      choice = gets.chomp.downcase
+      choice = gets.chomp.downcase.strip
       break if valid_start_input?(choice)
 
       puts 'Invalid input: please enter load or new'
@@ -97,11 +99,12 @@ class Game
   end
 
   def self.show_saves
+    puts '===== Save Files ====='
     Dir.each_child('saves') { |save| puts save.gsub('.yml', '') }
   end
 
   def self.save_game(game)
-    puts '===== Save Files ====='
+    system('clear')
     show_saves
     puts 'Input save name (enter name of old save to overwrite)'
     save_name = gets.chomp
@@ -114,10 +117,15 @@ class Game
   end
 
   def self.load_game
+    system('clear')
     show_saves
     puts 'Choose a saved game to load'
-    save = gets.chomp + '.yml'
-    # TODO: need input validation here
+    save = ''
+    loop do
+      save = gets.chomp + '.yml'
+      break if File.exist?("saves/#{save}")
+      puts 'File does not exist.'
+    end
     game = nil
     File.open("saves/#{save}", 'r') do |file|
       game = YAML.load(file)
@@ -145,7 +153,10 @@ class Game
     if correct_guess?
       human.correct_guesses << human.current_guess
     elsif human.current_guess == 'save'
-      self.class.save_game(self)
+      Game.save_game(self)
+    elsif human.current_guess == 'quit'
+      puts 'Thanks for playing!'
+      exit
     else
       human.wrong_guesses << human.current_guess
     end
@@ -158,19 +169,20 @@ class Game
   def play_game
     computer.set_word
     loop do
+      system('clear')
       display_word_in_progress
-      play_round
       p human.correct_guesses
       p human.wrong_guesses
       puts human.chances_left
+      play_round
       break if human.chances_left.zero? || win?
     end
     if win?
       puts 'You won!'
     else
       puts "You've run out of guesses, you lose."
-      puts "The word was #{computer.word}"
     end
+    puts "The word was #{computer.word}"
   end
 
   def play_round
