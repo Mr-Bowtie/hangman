@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 require 'pry'
 require 'yaml'
 
-DICTIONARY_FILE = 'dictionary.txt'.freeze
+DICTIONARY_FILE = 'dictionary.txt'
 
 class Player
   def initialize; end
@@ -10,7 +12,7 @@ end
 class Computer < Player
   attr_accessor :word
 
-  def initialize()
+  def initialize
     @word = ''
   end
 
@@ -32,18 +34,19 @@ end
 class Human < Player
   attr_accessor :correct_guesses, :wrong_guesses, :current_guess
 
-  def initialize(*args)
+  def initialize(*_args)
     @correct_guesses = []
     @wrong_guesses = []
     @current_guess = ''
   end
 
-  def get_input
+  def get_guess
     guess = ''
     loop do
       puts "Please enter a letter (enter 'save' to save the game)"
       guess = gets.chomp.downcase.strip
-      break if valid_input?(guess)
+      break if valid_guess?(guess)
+
       puts 'Invalid input'
     end
     self.current_guess = guess
@@ -53,7 +56,7 @@ class Human < Player
     correct_guesses.include?(input) || wrong_guesses.include?(input)
   end
 
-  def valid_input?(input)
+  def valid_guess?(input)
     return true if input == 'save'
     return false if input.length > 1
     return false if previous_guess?(input)
@@ -76,26 +79,45 @@ class Game
     @computer = computer
   end
 
+  def self.start_game(human, computer)
+    puts 'Welcome to Hangman!'
+    puts 'Would you like to load a save or start an new game? (enter load or new)'
+    choice = ''
+    loop do
+      choice = gets.chomp.downcase
+      break if valid_start_input?(choice)
+
+      puts 'Invalid input: please enter load or new'
+    end
+    choice == 'load' ? load_game : new(human, computer)
+  end
+
+  def self.valid_start_input?(input)
+    %w[load new].include?(input)
+  end
+
   def self.show_saves
     Dir.each_child('saves') { |save| puts save.gsub('.yml', '') }
   end
 
   def self.save_game(game)
     puts '===== Save Files ====='
-    self.show_saves
+    show_saves
     puts 'Input save name (enter name of old save to overwrite)'
     save_name = gets.chomp
     File.open("saves/#{save_name}.yml", 'w') do |file|
       file.write(YAML.dump(game))
     end
     puts 'Game saved'
+    sleep 1.5
+    system('clear')
   end
 
   def self.load_game
-    self.show_saves
+    show_saves
     puts 'Choose a saved game to load'
     save = gets.chomp + '.yml'
-    #Todo: need input validation here
+    # TODO: need input validation here
     game = nil
     File.open("saves/#{save}", 'r') do |file|
       game = YAML.load(file)
@@ -104,7 +126,7 @@ class Game
   end
 
   def display_word_in_progress
-    wip = '_' * (computer.word.length) # readline has a newline character i cant figure out how to get rid of right now.
+    wip = '_' * computer.word.length
     human.correct_guesses.each do |letter|
       indicies = []
       computer.word.chars.each_with_index do |char, idx|
@@ -152,13 +174,16 @@ class Game
   end
 
   def play_round
-    human.get_input
+    human.get_guess
     sort_guess
+  end
+
+  def welcome_screen
   end
 end
 
 human = Human.new
 computer = Computer.new
-hangman = Game.load_game
+hangman = Game.start_game(human, computer)
 
 hangman.play_game
